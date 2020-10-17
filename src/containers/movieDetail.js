@@ -1,89 +1,126 @@
 import React from "react";
+import { inject, observer } from "mobx-react";
+import { Link } from "react-router-dom";
+import { withRouter } from "react-router";
 import Navbar from "../components/navbar";
 import RelatedMovies from "../components/relatedMovies";
+import Api from "../api";
+import imdbIcon from "../assets/img/imdbIcon.png";
 
-function MovieDetail() {
-  return (
-    <div>
-      <Navbar />
+@inject("FavoritesStore")
+@observer
+class MovieDetail extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      movie: {},
+      isFavorite: false,
+    };
+  }
 
-      <div class="breadcrumb">
-        <div class="container">
-          <a href="index.html">Home /</a>
-          <span>The Godfather</span>
+  componentDidMount() {
+    Api.getMovie(this.props.match.params.id).then((movie) => {
+      this.setState({ movie }, () => {
+        this.setState({
+          isFavorite: this.props.FavoritesStore.isFavorite(
+            this.state.movie.imdbID
+          ),
+        });
+      });
+    });
+  }
+
+  setFavorite = (val) => {
+    if (val) {
+      this.props.FavoritesStore.addToFavorites(this.state.movie.imdbID);
+      this.setState({ isFavorite: true });
+
+      return;
+    }
+
+    this.props.FavoritesStore.removeFromFavorites(this.state.movie.imdbID);
+    this.setState({ isFavorite: false });
+  };
+
+  render() {
+    return (
+      <div>
+        <Navbar />
+
+        <div className="breadcrumb">
+          <div className="container">
+            <Link to="/">Home / </Link>
+            <span>{this.state.movie.Title}</span>
+          </div>
         </div>
-      </div>
 
-      <div class="container mb-3">
-        <div class="card">
-          <div class="card-horizontal row">
-            <div class="col-lg-4">
-              <div class="img-square-wrapper">
-                <img class="" src="/img/godFather.png" />
+        <div className="container mb-3">
+          <div className="card">
+            <div className="card-horizontal row">
+              <div className="col-lg-4">
+                <div className="img-square-wrapper">
+                  <img className="" src={this.state.movie.Poster} />
+                </div>
               </div>
-            </div>
-            <div class="col-lg-8">
-              <div class="card-body">
-                <div class="card-top">
-                  <div>
-                    <h6 class="text-secondary ml-2 mb-0">Rating</h6>
-                    <div class="imdb-rate">
-                      <img src="img/IMDB-icon.png" alt="" />
-                      <span>8.8</span>
+              <div className="col-lg-8">
+                <div className="card-body">
+                  <div className="card-top">
+                    <div>
+                      <h6 className="text-secondary ml-2 mb-0">Rating</h6>
+                      <div className="imdb-rate">
+                        <img src={imdbIcon} alt="" />
+                        <span>{this.state.movie.imdbRating}</span>
+                      </div>
+                    </div>
+                    <div className="links add-to-fav">
+                      <a
+                        href="javascript:void(0)"
+                        className={
+                          this.state.isFavorite
+                            ? "btn btn-yellow d-none"
+                            : "btn btn-yellow"
+                        }
+                        onClick={() => this.setFavorite(true)}
+                      >
+                        <i className="fa fa-heart" aria-hidden="true"></i>Add to
+                        favorites
+                      </a>
+                      <a
+                        href="javascript:void(0)"
+                        className={
+                          this.state.isFavorite
+                            ? "btn btn-yellow btn-yellow-outline"
+                            : "btn btn-yellow btn-yellow-outline d-none"
+                        }
+                        onClick={() => this.setFavorite(false)}
+                      >
+                        <i className="fa fa-heart" aria-hidden="true"></i>Added
+                        to favorites
+                      </a>
                     </div>
                   </div>
-                  <div class="links add-to-fav">
-                    <a href="favorites.html" class="btn btn-yellow">
-                      <i class="fa fa-heart" aria-hidden="true"></i>Add to
-                      favorites
-                    </a>
-                    <a
-                      href="favorites.html"
-                      class="btn btn-yellow btn-yellow-outline"
-                    >
-                      <i class="fa fa-heart" aria-hidden="true"></i>Added to
-                      favorites
-                    </a>
-                  </div>
-                </div>
-                <h6 class="yellow">2019</h6>
-                <h4 class="card-title">The Godfather</h4>
-                <p class="card-text">
-                  Lorem Ipsum is simply dummy text of the printing and
-                  typesetting industry. Lorem Ipsum has been the industry's
-                  standard dummy text ever since the 1500s, when an unknown
-                  printer took a galley of type and scrambled it to make a type
-                  specimen book. It has survived not only five centuries, but
-                  also the leap into electronic typesetting, remaining
-                  essentially unchanged. It was popularised in the 1960s with
-                  the release of Letraset sheets containing Lorem Ipsum
-                  passages, and more recently with desktop publishing software
-                  like Aldus PageMaker including versions of Lorem Ipsum.
-                </p>
+                  <h6 className="yellow">{this.state.movie.Year}</h6>
+                  <h4 className="card-title">{this.state.movie.Title}</h4>
+                  <p className="card-text">{this.state.movie.Plot}</p>
 
-                <div class="links">
-                  <a href="favorites.html" class="btn btn-yellow">
-                    Action
-                  </a>
-                  <a href="detail.html" class="btn btn-yellow">
-                    Biography
-                  </a>
-                  <a href="favorites.html" class="btn btn-yellow">
-                    Action
-                  </a>
-                  <a href="detail.html" class="btn btn-yellow">
-                    Biography
-                  </a>
+                  <div className="links">
+                    {this.state.movie.Genre &&
+                      this.state.movie.Genre.split(",").map((genre) => (
+                        <span className="btn btn-yellow" key={genre}>
+                          {genre}
+                        </span>
+                      ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <RelatedMovies />
-    </div>
-  );
+        <RelatedMovies />
+      </div>
+    );
+  }
 }
 
-export default MovieDetail;
+export default withRouter(MovieDetail);
